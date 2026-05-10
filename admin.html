@@ -1,1 +1,770 @@
 
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>لوحة تحكم المعلم - تمام</title>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Cairo', system-ui, sans-serif;
+        }
+
+        body {
+            background: #f5f7fb;
+            transition: background 0.3s, color 0.3s;
+            padding: 20px;
+        }
+
+        body.dark {
+            background: #121212;
+            color: #e0e0e0;
+        }
+
+        /* Login screen */
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 2000;
+        }
+
+        .login-card {
+            background: white;
+            border-radius: 30px;
+            padding: 40px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+
+        body.dark .login-card {
+            background: #1e1e2f;
+            color: white;
+        }
+
+        .login-card input {
+            width: 100%;
+            padding: 15px;
+            margin: 15px 0;
+            border: 1px solid #ddd;
+            border-radius: 50px;
+            font-size: 16px;
+        }
+
+        .login-card button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-size: 18px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        /* Main App */
+        .app-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: none;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            padding: 15px 25px;
+            border-radius: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        body.dark .header {
+            background: #1e1e2f;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .logo h2 {
+            color: #667eea;
+        }
+
+        .theme-toggle, .logout-btn {
+            background: #667eea20;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 8px 15px;
+            border-radius: 40px;
+            margin-right: 10px;
+        }
+
+        /* Stats */
+        .stats {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            flex: 1;
+            padding: 20px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        body.dark .stat-card {
+            background: #1e1e2f;
+        }
+
+        /* Sections */
+        .section {
+            background: white;
+            border-radius: 25px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+
+        body.dark .section {
+            background: #1e1e2f;
+        }
+
+        .section-title {
+            font-size: 24px;
+            margin-bottom: 20px;
+            border-right: 5px solid #667eea;
+            padding-right: 15px;
+        }
+
+        .add-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .item-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .item-card {
+            background: #f9f9f9;
+            padding: 12px 18px;
+            border-radius: 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        body.dark .item-card {
+            background: #2c2c3a;
+        }
+
+        .item-actions button {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            margin: 0 5px;
+        }
+
+        .edit-btn { color: #ffc107; }
+        .delete-btn { color: #dc3545; }
+
+        /* Dropdowns */
+        select, input {
+            padding: 10px;
+            border-radius: 30px;
+            border: 1px solid #ccc;
+            width: 100%;
+            margin-top: 5px;
+            margin-bottom: 15px;
+        }
+
+        body.dark select, body.dark input {
+            background: #2c2c3a;
+            color: white;
+            border-color: #444;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 3000;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 30px;
+            width: 90%;
+            max-width: 500px;
+        }
+        body.dark .modal-content {
+            background: #1e1e2f;
+        }
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        .save-btn { background: #28a745; color: white; border: none; padding: 8px 20px; border-radius: 40px; cursor: pointer; }
+        .cancel-btn { background: #6c757d; color: white; border: none; padding: 8px 20px; border-radius: 40px; cursor: pointer; }
+
+        @media (max-width: 700px) {
+            .header { flex-direction: column; gap: 10px; }
+            .item-card { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- شاشة تسجيل الدخول -->
+<div class="login-container" id="loginContainer">
+    <div class="login-card">
+        <h2>🔐 لوحة المعلم</h2>
+        <input type="password" id="adminPassword" placeholder="كلمة المرور">
+        <button id="loginBtn">دخول</button>
+        <p style="margin-top: 15px; font-size: 12px;">كلمة المرور: <strong>admin123</strong></p>
+    </div>
+</div>
+
+<!-- التطبيق الرئيسي -->
+<div class="app-container" id="appContainer">
+    <div class="header">
+        <div class="logo"><h2>📚 إدارة المنصة - تمَّام</h2></div>
+        <div>
+            <button class="theme-toggle" id="themeToggle">🌙</button>
+            <button class="logout-btn" id="logoutBtn">🚪 خروج</button>
+        </div>
+    </div>
+
+    <div class="stats" id="stats"></div>
+
+    <!-- إدارة الصفوف الدراسية -->
+    <div class="section">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 class="section-title">🎓 الصفوف الدراسية</h3>
+            <button class="add-btn" id="addGradeBtn">+ إضافة صف</button>
+        </div>
+        <div id="gradesList" class="item-list"></div>
+    </div>
+
+    <!-- إدارة المواد (مرتبطة بصف محدد) -->
+    <div class="section">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 class="section-title">📖 المواد</h3>
+            <button class="add-btn" id="addSubjectBtn">+ إضافة مادة</button>
+        </div>
+        <label>اختر الصف لعرض مواده:</label>
+        <select id="gradeFilterForSubjects"></select>
+        <div id="subjectsList" class="item-list"></div>
+    </div>
+
+    <!-- إدارة الفصول (مرتبطة بمادة) -->
+    <div class="section">
+        <div style="display: flex; justify-content: space-between;">
+            <h3 class="section-title">📂 الفصول</h3>
+            <button class="add-btn" id="addChapterBtn">+ إضافة فصل</button>
+        </div>
+        <label>اختر المادة:</label>
+        <select id="subjectFilterForChapters"></select>
+        <div id="chaptersList" class="item-list"></div>
+    </div>
+
+    <!-- إدارة المحاضرات (مرتبطة بفصل) -->
+    <div class="section">
+        <div style="display: flex; justify-content: space-between;">
+            <h3 class="section-title">🎥 المحاضرات والفيديوهات</h3>
+            <button class="add-btn" id="addLectureBtn">+ إضافة محاضرة</button>
+        </div>
+        <label>اختر الفصل:</label>
+        <select id="chapterFilterForLectures"></select>
+        <div id="lecturesList" class="item-list"></div>
+    </div>
+</div>
+
+<!-- مودال عام للإضافة/التعديل -->
+<div id="genericModal" class="modal">
+    <div class="modal-content">
+        <h3 id="modalTitle">إضافة جديد</h3>
+        <div id="modalFields"></div>
+        <div class="modal-actions">
+            <button class="cancel-btn" id="modalCancel">إلغاء</button>
+            <button class="save-btn" id="modalSave">حفظ</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ------------------- Firebase Config -------------------
+    const firebaseConfig = {
+        apiKey: "AIzaSyAFrf9kRQez8ltkvd66_BQZPmARc1fW6y8",
+        authDomain: "date-student.firebaseapp.com",
+        databaseURL: "https://date-student-default-rtdb.firebaseio.com",
+        projectId: "date-student",
+        storageBucket: "date-student.firebasestorage.app",
+        messagingSenderId: "952213529741",
+        appId: "1:952213529741:web:7a8d8da275214b5754eec4",
+        measurementId: "G-CNR9HYEGGF"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // ------------------- Global State -------------------
+    let currentModalType = null;   // 'grade', 'subject', 'chapter', 'lecture'
+    let currentEditId = null;
+    let currentEditParentId = null; // gradeId for subject, subjectId for chapter, chapterId for lecture
+
+    // بعد تحميل الصفحة نتحقق من الجلسة (بسيطة)
+    window.onload = () => {
+        // التحقق من dark mode
+        if(localStorage.getItem('darkMode') === 'enabled') {
+            document.body.classList.add('dark');
+            document.getElementById('themeToggle').innerHTML = '☀️';
+        }
+        // تسجيل الدخول
+        document.getElementById('loginBtn').onclick = () => {
+            const pwd = document.getElementById('adminPassword').value;
+            if(pwd === 'admin123') {
+                document.getElementById('loginContainer').style.display = 'none';
+                document.getElementById('appContainer').style.display = 'block';
+                loadAllData();
+            } else {
+                alert('كلمة المرور غير صحيحة');
+            }
+        };
+        document.getElementById('logoutBtn').onclick = () => {
+            document.getElementById('loginContainer').style.display = 'flex';
+            document.getElementById('appContainer').style.display = 'none';
+            document.getElementById('adminPassword').value = '';
+        };
+        document.getElementById('themeToggle').onclick = () => {
+            document.body.classList.toggle('dark');
+            const isDark = document.body.classList.contains('dark');
+            localStorage.setItem('darkMode', isDark ? 'enabled' : 'disabled');
+            document.getElementById('themeToggle').innerHTML = isDark ? '☀️' : '🌙';
+        };
+        // أزرار الإضافة
+        document.getElementById('addGradeBtn').onclick = () => openModal('grade');
+        document.getElementById('addSubjectBtn').onclick = () => openModal('subject');
+        document.getElementById('addChapterBtn').onclick = () => openModal('chapter');
+        document.getElementById('addLectureBtn').onclick = () => openModal('lecture');
+        // المودال
+        document.getElementById('modalCancel').onclick = closeModal;
+        document.getElementById('modalSave').onclick = saveModalData;
+    };
+
+    // تحميل كل البيانات من Firebase وتحديث الواجهة
+    function loadAllData() {
+        loadGrades();
+        loadSubjectsByGrade();
+        loadChaptersBySubject();
+        loadLecturesByChapter();
+        updateStats();
+    }
+
+    // ------------------- Grades -------------------
+    function loadGrades() {
+        db.ref('grades').on('value', (snapshot) => {
+            const grades = snapshot.val() || {};
+            const container = document.getElementById('gradesList');
+            container.innerHTML = '';
+            // ملء الفلتر الخاص بالمواد
+            const gradeFilter = document.getElementById('gradeFilterForSubjects');
+            gradeFilter.innerHTML = '<option value="">-- اختر الصف --</option>';
+            Object.keys(grades).forEach(id => {
+                const g = grades[id];
+                container.innerHTML += `
+                    <div class="item-card">
+                        <span><strong>${g.name}</strong> (الترتيب: ${g.order || 0})</span>
+                        <div class="item-actions">
+                            <button class="edit-btn" onclick="editGrade('${id}','${g.name}',${g.order || 0})"><i class="fas fa-edit"></i></button>
+                            <button class="delete-btn" onclick="deleteGrade('${id}')"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                `;
+                gradeFilter.innerHTML += `<option value="${id}">${g.name}</option>`;
+            });
+            // إعادة تحميل المواد بعد تغير الصفوف لأن الفلتر تغير
+            loadSubjectsByGrade();
+        });
+    }
+
+    window.editGrade = (id, name, order) => {
+        currentModalType = 'grade';
+        currentEditId = id;
+        document.getElementById('modalTitle').innerText = 'تعديل الصف';
+        document.getElementById('modalFields').innerHTML = `
+            <label>اسم الصف</label><input id="gradeName" value="${name}">
+            <label>ترتيب العرض</label><input id="gradeOrder" type="number" value="${order}">
+        `;
+        document.getElementById('genericModal').style.display = 'flex';
+    };
+
+    window.deleteGrade = (id) => {
+        if(confirm('هل أنت متأكد من حذف هذا الصف؟ سيتم حذف جميع مواده وفصوله ومحاضراته تلقائياً (حسب القاعدة).')) {
+            db.ref('grades/' + id).remove();
+            // حذف المواد المرتبطة
+            db.ref('subjects').orderByChild('gradeId').equalTo(id).once('value', snap => {
+                snap.forEach(sub => { db.ref('subjects/' + sub.key).remove(); });
+            });
+        }
+    };
+
+    // ------------------- Subjects -------------------
+    function loadSubjectsByGrade() {
+        const gradeId = document.getElementById('gradeFilterForSubjects').value;
+        if(!gradeId) {
+            document.getElementById('subjectsList').innerHTML = '<div class="item-card">اختر صفاً أولاً</div>';
+            return;
+        }
+        db.ref('subjects').orderByChild('gradeId').equalTo(gradeId).on('value', (snapshot) => {
+            const subs = snapshot.val() || {};
+            const container = document.getElementById('subjectsList');
+            container.innerHTML = '';
+            // ملء فلتر الفصول (قائمة المواد)
+            const subjectFilter = document.getElementById('subjectFilterForChapters');
+            if(gradeId === document.getElementById('gradeFilterForSubjects').value) {
+                subjectFilter.innerHTML = '<option value="">-- اختر مادة --</option>';
+                Object.keys(subs).forEach(id => {
+                    subjectFilter.innerHTML += `<option value="${id}">${subs[id].name}</option>`;
+                });
+            }
+            Object.keys(subs).forEach(id => {
+                container.innerHTML += `
+                    <div class="item-card">
+                        <span><strong>${subs[id].name}</strong></span>
+                        <div class="item-actions">
+                            <button class="edit-btn" onclick="editSubject('${id}','${subs[id].name}','${gradeId}')"><i class="fas fa-edit"></i></button>
+                            <button class="delete-btn" onclick="deleteSubject('${id}')"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+            loadChaptersBySubject(); // تحديث الفصول
+        });
+    }
+
+    window.editSubject = (id, name, gradeId) => {
+        currentModalType = 'subject';
+        currentEditId = id;
+        document.getElementById('modalTitle').innerText = 'تعديل مادة';
+        document.getElementById('modalFields').innerHTML = `
+            <label>اسم المادة</label><input id="subjectName" value="${name}">
+            <label>الصف</label>
+            <select id="subjectGradeId">${getGradesOptions(gradeId)}</select>
+        `;
+        document.getElementById('genericModal').style.display = 'flex';
+    };
+
+    window.deleteSubject = (id) => {
+        if(confirm('سيتم حذف جميع الفصول والمحاضرات المرتبطة بهذه المادة')) {
+            db.ref('subjects/' + id).remove();
+            db.ref('chapters').orderByChild('subjectId').equalTo(id).once('value', snap => {
+                snap.forEach(ch => { db.ref('chapters/' + ch.key).remove(); });
+            });
+        }
+    };
+
+    // ------------------- Chapters -------------------
+    function loadChaptersBySubject() {
+        const subjectId = document.getElementById('subjectFilterForChapters').value;
+        if(!subjectId) {
+            document.getElementById('chaptersList').innerHTML = '<div class="item-card">اختر مادة أولاً</div>';
+            return;
+        }
+        db.ref('chapters').orderByChild('subjectId').equalTo(subjectId).on('value', (snapshot) => {
+            const chapters = snapshot.val() || {};
+            const container = document.getElementById('chaptersList');
+            container.innerHTML = '';
+            const lectureFilter = document.getElementById('chapterFilterForLectures');
+            if(subjectId === document.getElementById('subjectFilterForChapters').value) {
+                lectureFilter.innerHTML = '<option value="">-- اختر فصل --</option>';
+                Object.keys(chapters).forEach(id => {
+                    lectureFilter.innerHTML += `<option value="${id}">${chapters[id].name}</option>`;
+                });
+            }
+            Object.keys(chapters).forEach(id => {
+                container.innerHTML += `
+                    <div class="item-card">
+                        <span><strong>${chapters[id].name}</strong></span>
+                        <div class="item-actions">
+                            <button class="edit-btn" onclick="editChapter('${id}','${chapters[id].name}','${subjectId}')"><i class="fas fa-edit"></i></button>
+                            <button class="delete-btn" onclick="deleteChapter('${id}')"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+            loadLecturesByChapter();
+        });
+    }
+
+    window.editChapter = (id, name, subjectId) => {
+        currentModalType = 'chapter';
+        currentEditId = id;
+        document.getElementById('modalTitle').innerText = 'تعديل فصل';
+        document.getElementById('modalFields').innerHTML = `
+            <label>اسم الفصل</label><input id="chapterName" value="${name}">
+            <label>المادة</label>
+            <select id="chapterSubjectId">${getSubjectsOptions(subjectId)}</select>
+        `;
+        document.getElementById('genericModal').style.display = 'flex';
+    };
+
+    window.deleteChapter = (id) => {
+        if(confirm('سيتم حذف جميع المحاضرات المرتبطة بهذا الفصل')) {
+            db.ref('chapters/' + id).remove();
+            db.ref('lectures').orderByChild('chapterId').equalTo(id).once('value', snap => {
+                snap.forEach(lec => { db.ref('lectures/' + lec.key).remove(); });
+            });
+        }
+    };
+
+    // ------------------- Lectures -------------------
+    function loadLecturesByChapter() {
+        const chapterId = document.getElementById('chapterFilterForLectures').value;
+        if(!chapterId) {
+            document.getElementById('lecturesList').innerHTML = '<div class="item-card">اختر فصلاً أولاً</div>';
+            return;
+        }
+        db.ref('lectures').orderByChild('chapterId').equalTo(chapterId).on('value', (snapshot) => {
+            const lectures = snapshot.val() || {};
+            const container = document.getElementById('lecturesList');
+            container.innerHTML = '';
+            Object.keys(lectures).forEach(id => {
+                container.innerHTML += `
+                    <div class="item-card">
+                        <span><strong>${lectures[id].name}</strong><br><small>${lectures[id].videoUrl}</small></span>
+                        <div class="item-actions">
+                            <button class="edit-btn" onclick="editLecture('${id}','${lectures[id].name}','${lectures[id].videoUrl}','${chapterId}')"><i class="fas fa-edit"></i></button>
+                            <button class="delete-btn" onclick="deleteLecture('${id}')"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+        });
+    }
+
+    window.editLecture = (id, name, url, chapterId) => {
+        currentModalType = 'lecture';
+        currentEditId = id;
+        document.getElementById('modalTitle').innerText = 'تعديل محاضرة';
+        document.getElementById('modalFields').innerHTML = `
+            <label>اسم المحاضرة</label><input id="lectureName" value="${name}">
+            <label>رابط الفيديو</label><input id="lectureUrl" value="${url}">
+            <label>الفصل</label>
+            <select id="lectureChapterId">${getChaptersOptions(chapterId)}</select>
+        `;
+        document.getElementById('genericModal').style.display = 'flex';
+    };
+
+    window.deleteLecture = (id) => {
+        if(confirm('هل تريد حذف هذه المحاضرة؟')) {
+            db.ref('lectures/' + id).remove();
+        }
+    };
+
+    // ------------------- Modal Save -------------------
+    function saveModalData() {
+        switch(currentModalType) {
+            case 'grade':
+                const name = document.getElementById('gradeName')?.value;
+                const order = parseInt(document.getElementById('gradeOrder')?.value) || 0;
+                if(!name) { alert('أدخل اسم الصف'); return; }
+                if(currentEditId) {
+                    db.ref('grades/' + currentEditId).update({ name, order });
+                } else {
+                    db.ref('grades').push({ name, order });
+                }
+                break;
+            case 'subject':
+                const subName = document.getElementById('subjectName')?.value;
+                const gradeId = document.getElementById('subjectGradeId')?.value;
+                if(!subName || !gradeId) { alert('أكمل البيانات'); return; }
+                if(currentEditId) {
+                    db.ref('subjects/' + currentEditId).update({ name: subName, gradeId });
+                } else {
+                    db.ref('subjects').push({ name: subName, gradeId });
+                }
+                break;
+            case 'chapter':
+                const chapName = document.getElementById('chapterName')?.value;
+                const subjectId = document.getElementById('chapterSubjectId')?.value;
+                if(!chapName || !subjectId) { alert('أكمل البيانات'); return; }
+                if(currentEditId) {
+                    db.ref('chapters/' + currentEditId).update({ name: chapName, subjectId });
+                } else {
+                    db.ref('chapters').push({ name: chapName, subjectId });
+                }
+                break;
+            case 'lecture':
+                const lecName = document.getElementById('lectureName')?.value;
+                const videoUrl = document.getElementById('lectureUrl')?.value;
+                const chapterId = document.getElementById('lectureChapterId')?.value;
+                if(!lecName || !videoUrl || !chapterId) { alert('أكمل البيانات'); return; }
+                if(currentEditId) {
+                    db.ref('lectures/' + currentEditId).update({ name: lecName, videoUrl, chapterId });
+                } else {
+                    db.ref('lectures').push({ name: lecName, videoUrl, chapterId });
+                }
+                break;
+        }
+        closeModal();
+        loadAllData();
+    }
+
+    function closeModal() {
+        document.getElementById('genericModal').style.display = 'none';
+        currentModalType = null;
+        currentEditId = null;
+    }
+
+    function openModal(type) {
+        currentModalType = type;
+        currentEditId = null;
+        document.getElementById('modalTitle').innerText = `إضافة ${type === 'grade' ? 'صف' : type === 'subject' ? 'مادة' : type === 'chapter' ? 'فصل' : 'محاضرة'}`;
+        let fields = '';
+        if(type === 'grade') fields = `<label>اسم الصف</label><input id="gradeName"><label>ترتيب العرض</label><input id="gradeOrder" type="number" value="0">`;
+        else if(type === 'subject') fields = `<label>اسم المادة</label><input id="subjectName"><label>اختر الصف</label><select id="subjectGradeId">${getGradesOptions('')}</select>`;
+        else if(type === 'chapter') fields = `<label>اسم الفصل</label><input id="chapterName"><label>اختر المادة</label><select id="chapterSubjectId">${getSubjectsOptions('')}</select>`;
+        else if(type === 'lecture') fields = `<label>اسم المحاضرة</label><input id="lectureName"><label>رابط الفيديو</label><input id="lectureUrl"><label>اختر الفصل</label><select id="lectureChapterId">${getChaptersOptions('')}</select>`;
+        document.getElementById('modalFields').innerHTML = fields;
+        document.getElementById('genericModal').style.display = 'flex';
+    }
+
+    // Helper functions to generate dropdowns from realtime data (async used inside openModal, but we'll load dynamically)
+    function getGradesOptions(selectedId) {
+        let opts = '<option value="">-- اختر --</option>';
+        db.ref('grades').once('value', snap => {
+            // but we need synchronous? We'll fill later via promise; for simplicity in modal we'll do on the fly.
+        });
+        // Better to make it async but for demo we'll do a direct call that returns promise? We'll handle inside modal by re-reading.
+        // Simpler: we'll reload options each time using async. But to avoid complexity, I'll make these functions return a promise and set innerHTML.
+        // I'll change openModal to fetch and then set fields.
+        return opts; // temporary
+    }
+    // Let's fix: override openModal to load options async
+    const originalOpen = openModal;
+    window.openModal = async (type) => {
+        currentModalType = type;
+        currentEditId = null;
+        document.getElementById('modalTitle').innerText = `إضافة ${type === 'grade' ? 'صف' : type === 'subject' ? 'مادة' : type === 'chapter' ? 'فصل' : 'محاضرة'}`;
+        let fields = '';
+        if(type === 'grade') {
+            fields = `<label>اسم الصف</label><input id="gradeName"><label>ترتيب العرض</label><input id="gradeOrder" type="number" value="0">`;
+            document.getElementById('modalFields').innerHTML = fields;
+        } else if(type === 'subject') {
+            const grades = await db.ref('grades').once('value');
+            let opts = '<option value="">-- اختر الصف --</option>';
+            grades.forEach(g => { opts += `<option value="${g.key}">${g.val().name}</option>`; });
+            fields = `<label>اسم المادة</label><input id="subjectName"><label>الصف</label><select id="subjectGradeId">${opts}</select>`;
+            document.getElementById('modalFields').innerHTML = fields;
+        } else if(type === 'chapter') {
+            const subjects = await db.ref('subjects').once('value');
+            let opts = '<option value="">-- اختر المادة --</option>';
+            subjects.forEach(s => { opts += `<option value="${s.key}">${s.val().name}</option>`; });
+            fields = `<label>اسم الفصل</label><input id="chapterName"><label>المادة</label><select id="chapterSubjectId">${opts}</select>`;
+            document.getElementById('modalFields').innerHTML = fields;
+        } else if(type === 'lecture') {
+            const chapters = await db.ref('chapters').once('value');
+            let opts = '<option value="">-- اختر الفصل --</option>';
+            chapters.forEach(c => { opts += `<option value="${c.key}">${c.val().name}</option>`; });
+            fields = `<label>اسم المحاضرة</label><input id="lectureName"><label>رابط الفيديو</label><input id="lectureUrl"><label>الفصل</label><select id="lectureChapterId">${opts}</select>`;
+            document.getElementById('modalFields').innerHTML = fields;
+        }
+        document.getElementById('genericModal').style.display = 'flex';
+    };
+    // replace function
+    window.openModal = openModal;
+
+    // Fix edit functions similarly (they already use synchronous-like but we can leave as is because they set fields without options? Actually editSubject needs grade select, editChapter needs subject select, editLecture needs chapter select)
+    // We'll adjust edit functions to load options.
+    window.editSubject = async (id, name, gradeId) => {
+        currentModalType = 'subject';
+        currentEditId = id;
+        const grades = await db.ref('grades').once('value');
+        let opts = '';
+        grades.forEach(g => { opts += `<option value="${g.key}" ${g.key === gradeId ? 'selected' : ''}>${g.val().name}</option>`; });
+        document.getElementById('modalTitle').innerText = 'تعديل مادة';
+        document.getElementById('modalFields').innerHTML = `<label>اسم المادة</label><input id="subjectName" value="${name}"><label>الصف</label><select id="subjectGradeId">${opts}</select>`;
+        document.getElementById('genericModal').style.display = 'flex';
+    };
+    window.editChapter = async (id, name, subjectId) => {
+        currentModalType = 'chapter';
+        currentEditId = id;
+        const subjects = await db.ref('subjects').once('value');
+        let opts = '';
+        subjects.forEach(s => { opts += `<option value="${s.key}" ${s.key === subjectId ? 'selected' : ''}>${s.val().name}</option>`; });
+        document.getElementById('modalTitle').innerText = 'تعديل فصل';
+        document.getElementById('modalFields').innerHTML = `<label>اسم الفصل</label><input id="chapterName" value="${name}"><label>المادة</label><select id="chapterSubjectId">${opts}</select>`;
+        document.getElementById('genericModal').style.display = 'flex';
+    };
+    window.editLecture = async (id, name, url, chapterId) => {
+        currentModalType = 'lecture';
+        currentEditId = id;
+        const chapters = await db.ref('chapters').once('value');
+        let opts = '';
+        chapters.forEach(c => { opts += `<option value="${c.key}" ${c.key === chapterId ? 'selected' : ''}>${c.val().name}</option>`; });
+        document.getElementById('modalTitle').innerText = 'تعديل محاضرة';
+        document.getElementById('modalFields').innerHTML = `<label>اسم المحاضرة</label><input id="lectureName" value="${name}"><label>رابط الفيديو</label><input id="lectureUrl" value="${url}"><label>الفصل</label><select id="lectureChapterId">${opts}</select>`;
+        document.getElementById('genericModal').style.display = 'flex';
+    };
+
+    // Update stats
+    async function updateStats() {
+        const gradesSnap = await db.ref('grades').once('value');
+        const subjectsSnap = await db.ref('subjects').once('value');
+        const chaptersSnap = await db.ref('chapters').once('value');
+        const lecturesSnap = await db.ref('lectures').once('value');
+        document.getElementById('stats').innerHTML = `
+            <div class="stat-card"><i class="fas fa-graduation-cap"></i><h3>${gradesSnap.numChildren()}</h3><p>الصفوف</p></div>
+            <div class="stat-card"><i class="fas fa-book"></i><h3>${subjectsSnap.numChildren()}</h3><p>المواد</p></div>
+            <div class="stat-card"><i class="fas fa-folder"></i><h3>${chaptersSnap.numChildren()}</h3><p>الفصول</p></div>
+            <div class="stat-card"><i class="fas fa-video"></i><h3>${lecturesSnap.numChildren()}</h3><p>المحاضرات</p></div>
+        `;
+    }
+
+    // Listen to changes for filters to refresh
+    document.getElementById('gradeFilterForSubjects').addEventListener('change', () => loadSubjectsByGrade());
+    document.getElementById('subjectFilterForChapters').addEventListener('change', () => loadChaptersBySubject());
+    document.getElementById('chapterFilterForLectures').addEventListener('change', () => loadLecturesByChapter());
+</script>
+</body>
+</html>
